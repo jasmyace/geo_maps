@@ -10,6 +10,7 @@ requires-python = ">=3.12.11"
 dependencies = [
     "chromadb>=1.5.9",
     "dotenv>=0.9.9",
+    "ipython>=9.17.1",
     "langchain-chroma>=1.1.0",
     "langchain-community>=0.4.2",
     "langchain-ollama>=1.1.0",
@@ -17,6 +18,7 @@ dependencies = [
     "langchain-text-splitters>=1.1.2",
     "libpysal>=4.15.0",
     "matplotlib>=3.11.1",
+    "nbformat>=4.2.0",
     "numpy>=2.5.2",
     "openai>=3.6.0",
     "pandas>=3.0.5",
