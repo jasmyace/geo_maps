@@ -1,0 +1,38 @@
+[project]
+name = "query-translater"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "jasmyace", email = "jasmyace@gmail.com" }
+]
+requires-python = ">=3.12.11"
+dependencies = [
+    "chromadb>=1.5.9",
+    "dotenv>=0.9.9",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.2",
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.6.0",
+    "langchain-text-splitters>=1.1.2",
+    "libpysal>=4.15.0",
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.2",
+    "openai>=3.6.0",
+    "pandas>=3.0.5",
+    "pygris>=0.2.1",
+    "requests>=2.34.2",
+    "tigris>=0.1.0",
+]
+
+[project.scripts]
+query-translater = "query_translater:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
