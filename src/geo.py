@@ -43,7 +43,7 @@ def get_all_tracts(years: list[int], us_state_codes: list[str], saveSpot: str | 
       gdf_tracts.to_file(f"{saveSpot}tracts_{year}.shp")
       print(f"Saved year {year}.")
     tract_years.append(gdf_tracts)
-  gdf_tract_years = pd.concat(tract_years, axis = 0)
+  gdf_tract_years = pd.concat(tract_years, axis = 0).reset_index()
   return gdf_tract_years
 
 
@@ -65,7 +65,7 @@ class Rings:
     self.crs = crs
     self.km = km
   
-  def get_rRing(self, gdf, verbose: bool = False) -> dict[list[int]]:
+  def get_rRings(self, gdf: gpd.GeoDataFrame, verbose: bool = False) -> dict[list[int]]:
     
     # gdf = gdf
     # geoid = '25001015100'
@@ -85,19 +85,45 @@ class Rings:
     while r < (self.rings + 1): 
       if r == 0: 
         idx = pgdf.loc[pgdf.GEOID == self.geoid, :].index.tolist()
-        ring_dict['ring0'] = pgdf.loc[pgdf.GEOID == self.geoid, :].index.tolist()
+        ring_dict[0] = str(pgdf.loc[pgdf.GEOID == self.geoid, :].index[0])
       else: 
-        idx = ring_dict[f'ring{r - 1}']
-        ring_dict[f'ring{r}'] = [queen.neighbors[x] for x in idx][0]
+        idx = ring_dict[r - 1]
+        ring_dict[r] = [queen.neighbors(x) for x in idx]
       if verbose: 
         print(f'done with r = {r}.')
       r = r + 1
-      self.rRing = ring_dict
-
-
+      self.rRings = ring_dict
+      
+  # def get_rRings_gdf(self, gdf: gpd.GeoDataFrame, ring_dict: dict[list[int]]) -> gpd.GeoDataFrame: 
+    
+  #   ring_df = pd.DataFrame.from_dict(self.rRings, orient = "index").T
+  #   ring_df = pd.DataFrame.from_dict(ugh.rRings, orient = "index").T.stack().reset_index().rename(columns = {'level_1': 'ring', 0: 'GEOID'}).drop(columns = 'level_0').dropna().sort_values(['ring', 'GEOID']).merge(us_2024, on = 'GEOID', how = 'left')  # level_1 always ring?
+    
+    
+    
 year = 2024
 us_2024 = get_all_tracts([year], us_state_codes)
-# us_2024 = gpd.read_file(f"{saveSpot}tracts_{year}.shp")
 ugh = Rings('25001015100') 
-ugh.get_rRing(gdf = us_2024, verbose = True)
-  
+ugh.get_rRings(gdf = us_2024, verbose = True) 
+    
+
+
+
+# import plotly.express as px
+
+# fig = px.choropleth_mapbox(
+#     gdf, 
+#     geojson=gdf.geometry,  # Pass the geometry column as the geojson source
+#     locations=gdf.index,  # Use the index or unique ID column as locations
+#     color="your_value_column",  # The numeric column to color-code by
+#     color_continuous_scale="Viridis",
+#     mapbox_style="carto-positron",  # Choose a background style (e.g., 'open-street-map', 'carto-positron')
+#     zoom=5,  # Adjust initial zoom level
+#     center={"lat": your_center_lat, "lon": your_center_lon},  # Map center coordinates
+#     opacity=0.6,
+# )
+# fig.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0})
+
+# # Save visualization to a local HTML file and return it
+# output_filename = f"{state_clean}_income_map.html"
+# fig.write_html(output_filename)
