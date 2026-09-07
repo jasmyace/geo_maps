@@ -2,12 +2,13 @@
 import numpy as np
 import pandas as pd 
 import geopandas as gpd
-import libpysal
+from libpysal.weights import Queen 
 import pygris
 import matplotlib.pyplot as plt
+import json
+import plotly.express as px
 
 saveSpot = '/Users/Jason/Documents/Machine Learning/gen_ai/tracts/'
-
 
 us_state_codes = [
     "AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", 
@@ -55,8 +56,6 @@ def get_all_tracts(years: list[int], us_state_codes: list[str], saveSpot: str | 
 #   in the parentheses.  it runs exactly once when python first reads it.  this helps to 
 #   build standard class hierarchies.  
 
-from libpysal.weights import Queen 
-
 # def __init__ always returns None. 
 class Rings: 
   def __init__(self, geoid: str, crs: int = 3857, rings: int = 3, km: float = 1000.0) -> None:
@@ -85,19 +84,23 @@ class Rings:
     while r < (self.rings + 1): 
       if r == 0: 
         idx = pgdf.loc[pgdf.GEOID == self.geoid, :].index.tolist()
-        ring_dict[0] = str(pgdf.loc[pgdf.GEOID == self.geoid, :].index[0])
+        ring_dict[0] = [int(pgdf.loc[pgdf.GEOID == self.geoid, :].index[0])]
       else: 
         idx = ring_dict[r - 1]
-        ring_dict[r] = [queen.neighbors(x) for x in idx]
+        ring_dict[r] = [y for sublist in [queen.neighbors[x] for x in idx] for y in sublist]  #[queen.neighbors[x] for x in idx][0]
       if verbose: 
         print(f'done with r = {r}.')
       r = r + 1
       self.rRings = ring_dict
       
-  # def get_rRings_gdf(self, gdf: gpd.GeoDataFrame, ring_dict: dict[list[int]]) -> gpd.GeoDataFrame: 
+  def get_rRings_gdf(self, gdf: gpd.GeoDataFrame, ring_dict: dict[list[int]]) -> gpd.GeoDataFrame: 
     
-  #   ring_df = pd.DataFrame.from_dict(self.rRings, orient = "index").T
-  #   ring_df = pd.DataFrame.from_dict(ugh.rRings, orient = "index").T.stack().reset_index().rename(columns = {'level_1': 'ring', 0: 'GEOID'}).drop(columns = 'level_0').dropna().sort_values(['ring', 'GEOID']).merge(us_2024, on = 'GEOID', how = 'left')  # level_1 always ring?
+    ring_df = pd.DataFrame.from_dict(self.rRings, orient = "index").T
+    ring_df = pd.DataFrame.from_dict(ugh.rRings, orient = "index").T.stack().reset_index().rename(columns = {'level_1': 'ring', 0: 'idx'}).drop(columns = 'level_0').dropna().sort_values(['ring', 'idx']).merge(us_2024, left_on = 'idx', right_index = True, how = 'left')  # level_1 always ring?
+    
+# idx = [34817, 34546, 34824, 34825, 34574]
+# [queen.neighbors[x] for x in idx]
+
     
     
     
@@ -108,22 +111,25 @@ ugh.get_rRings(gdf = us_2024, verbose = True)
     
 
 
+gdf = gpd.GeoDataFrame(ring_df, geometry = 'geometry', crs = 3857)
 
-# import plotly.express as px
+gdf['poly_id'] = gdf.index.astype(str)
+geojson_data = json.loads(gdf.to_json())
 
-# fig = px.choropleth_mapbox(
-#     gdf, 
-#     geojson=gdf.geometry,  # Pass the geometry column as the geojson source
-#     locations=gdf.index,  # Use the index or unique ID column as locations
-#     color="your_value_column",  # The numeric column to color-code by
-#     color_continuous_scale="Viridis",
-#     mapbox_style="carto-positron",  # Choose a background style (e.g., 'open-street-map', 'carto-positron')
-#     zoom=5,  # Adjust initial zoom level
-#     center={"lat": your_center_lat, "lon": your_center_lon},  # Map center coordinates
-#     opacity=0.6,
-# )
-# fig.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0})
 
-# # Save visualization to a local HTML file and return it
-# output_filename = f"{state_clean}_income_map.html"
-# fig.write_html(output_filename)
+
+fig = px.choropleth_map(
+    gdf, 
+    geojson=geojson_data,  # Pass the geometry column as the geojson source
+    locations="poly_id",  # Use the index or unique ID column as locations 
+    color="ring",  # The numeric column to color-code by
+    color_continuous_scale="Viridis",
+    zoom=9,  # Adjust initial zoom level
+    center={"lat": 41.6, "lon": -70.2},  # Map center coordinates
+    opacity=0.6,
+)
+fig.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0})
+
+# Save visualization to a local HTML file and return it
+output_filename = f"{state_clean}_income_map.html"
+fig.write_html(output_filename)
