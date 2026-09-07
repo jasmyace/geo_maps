@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.scripts]
-query-translater = "geo_maps:main"
+geo_maps = "geo_maps:main"
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]

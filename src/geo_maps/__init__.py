@@ -1,2 +1,2 @@
 def main() -> None:
-    print("Hello from query-translater!")
+    print("Hello from geo-maps!")
